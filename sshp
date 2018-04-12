@@ -1,0 +1,35 @@
+#!/usr/bin/expect
+
+# sshp [ssp args]
+# example:
+# sshp host -p22
+# The pass file has three rows
+# public ip -- intranet ip  -- password
+
+set f [open "/Users/anyone/.sshp/pass"]
+set pwds [split [read $f] "\n"]
+close $f
+
+# host
+set host [lindex [split [lindex $argv 0] "@"] 1]
+set choose ""
+foreach pd $pwds {
+    set eachline [split $pd " "]
+    if {$host eq [lindex $eachline 0]} {
+        set choose [lindex $eachline 2]
+        break
+    }
+}
+
+if {$choose eq ""} {
+    puts "warning empty password!"
+}
+
+set timeout 10
+spawn ssh $argv
+expect {
+    "*yes/no*" { send "yes\r"; exp_continue }
+    "*password*" { send "$choose\r"}
+}
+
+interact
